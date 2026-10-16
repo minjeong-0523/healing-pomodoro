@@ -1,0 +1,1008 @@
+<script>
+  var FOCUS_SECONDS = 25 * 60;
+  var BREAK_SECONDS = 5 * 60;
+
+  var mode = 'focus';
+  var timeLeft = FOCUS_SECONDS;
+  var timerId = null;
+  var running = false;
+  var missions = [];
+  var quotes = [];
+  var currentMission = null;
+  var missionSource = 'break'; // 'break'(뽀모도로 쉬는시간) 또는 'standalone'(바로 미션)
+
+  // 로그인 상태: 토큰은 이 기기에 저장해 두고, 서버에 요청할 때마다 같이 보내서 "누구의 기록인지" 구분해요
+  var TOKEN_KEY = 'healingPomodoroToken';
+  var authToken = null;
+  var currentUser = null;
+  var authMode = 'login'; // 'login' 또는 'signup'
+
+  function loadToken() {
+    try { return localStorage.getItem(TOKEN_KEY); } catch (e) { return null; }
+  }
+  function saveToken(t) {
+    try { localStorage.setItem(TOKEN_KEY, t); } catch (e) {}
+  }
+  function clearToken() {
+    try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+  }
+
+  /** 서버에서 "로그인이 필요해요"라고 하면 로그인 화면으로 돌려보내요 */
+  function isLoginError(err) {
+    return String(err && err.message ? err.message : err).indexOf('LOGIN_REQUIRED') !== -1;
+  }
+  function handleServerError(err) {
+    console.error(err);
+    if (isLoginError(err)) {
+      logout();
+      showAuthError('로그인이 만료되었어요. 다시 로그인해 주세요.');
+    }
+  }
+
+  var els = {
+    homeView: document.getElementById('homeView'),
+    pomodoroView: document.getElementById('pomodoroView'),
+    statsView: document.getElementById('statsView'),
+    diaryOverlay: document.getElementById('diaryOverlay'),
+    diaryFab: document.getElementById('diaryFab'),
+    diaryTabMood: document.getElementById('diaryTabMood'),
+    diaryTabChat: document.getElementById('diaryTabChat'),
+    diaryMoodView: document.getElementById('diaryMoodView'),
+    diaryChatView: document.getElementById('diaryChatView'),
+    cardPomodoro: document.getElementById('cardPomodoro'),
+    cardMission: document.getElementById('cardMission'),
+    cardStats: document.getElementById('cardStats'),
+    statsBackBtn: document.getElementById('statsBackBtn'),
+    diaryInput: document.getElementById('diaryInput'),
+    diarySaveBtn: document.getElementById('diarySaveBtn'),
+    diarySavedMsg: document.getElementById('diarySavedMsg'),
+    diaryQuestionInput: document.getElementById('diaryQuestionInput'),
+    diaryAskBtn: document.getElementById('diaryAskBtn'),
+    diaryChatLog: document.getElementById('diaryChatLog'),
+    streakBadge: document.getElementById('streakBadge'),
+    statsToday: document.getElementById('statsToday'),
+    statsWeek: document.getElementById('statsWeek'),
+    statsTotal: document.getElementById('statsTotal'),
+    statsStreak: document.getElementById('statsStreak'),
+    last7List: document.getElementById('last7List'),
+    backToHomeBtn: document.getElementById('backToHomeBtn'),
+    modeLabel: document.getElementById('modeLabel'),
+    focusView: document.getElementById('focusView'),
+    breakView: document.getElementById('breakView'),
+    timerDisplay: document.getElementById('timerDisplay'),
+    startPauseBtn: document.getElementById('startPauseBtn'),
+    resetBtn: document.getElementById('resetBtn'),
+    todayCount: document.getElementById('todayCount'),
+    missionOverlay: document.getElementById('missionOverlay'),
+    missionCharEmoji: document.getElementById('missionCharEmoji'),
+    missionCharName: document.getElementById('missionCharName'),
+    missionContent: document.getElementById('missionContent'),
+    missionDoneBtn: document.getElementById('missionDoneBtn'),
+    missionSkipBtn: document.getElementById('missionSkipBtn'),
+    quoteText: document.getElementById('quoteText'),
+    songReco: document.getElementById('songReco'),
+    stampOverlay: document.getElementById('stampOverlay'),
+    stampMessage: document.getElementById('stampMessage'),
+    bgmToggleBtn: document.getElementById('bgmToggleBtn'),
+    closeDiaryBtn: document.getElementById('closeDiaryBtn'),
+    dismissDiaryBtn: document.getElementById('dismissDiaryBtn'),
+    selectedWeatherLabel: document.getElementById('selectedWeatherLabel'),
+    pomoScoreText: document.getElementById('pomoScoreText'),
+    charCount: document.getElementById('charCount'),
+    authView: document.getElementById('authView'),
+    appMain: document.getElementById('appMain'),
+    authTabLogin: document.getElementById('authTabLogin'),
+    authTabSignup: document.getElementById('authTabSignup'),
+    authForm: document.getElementById('authForm'),
+    authUsername: document.getElementById('authUsername'),
+    authNickname: document.getElementById('authNickname'),
+    authPassword: document.getElementById('authPassword'),
+    authPassword2: document.getElementById('authPassword2'),
+    authError: document.getElementById('authError'),
+    authSubmitBtn: document.getElementById('authSubmitBtn'),
+    authHint: document.getElementById('authHint'),
+    userGreeting: document.getElementById('userGreeting'),
+    logoutBtn: document.getElementById('logoutBtn'),
+    classicTitle: document.getElementById('classicTitle'),
+    stampNextBtn: document.getElementById('stampNextBtn'),
+    authQuestion: document.getElementById('authQuestion'),
+    authAnswer: document.getElementById('authAnswer'),
+    findLinkBtn: document.getElementById('findLinkBtn'),
+    findView: document.getElementById('findView'),
+    findBackBtn: document.getElementById('findBackBtn'),
+    findTabId: document.getElementById('findTabId'),
+    findTabReset: document.getElementById('findTabReset'),
+    findForm: document.getElementById('findForm'),
+    findNickname: document.getElementById('findNickname'),
+    findUsername: document.getElementById('findUsername'),
+    findQuestion: document.getElementById('findQuestion'),
+    findAnswer: document.getElementById('findAnswer'),
+    findNewPassword: document.getElementById('findNewPassword'),
+    findNewPassword2: document.getElementById('findNewPassword2'),
+    findError: document.getElementById('findError'),
+    findResult: document.getElementById('findResult'),
+    findSubmitBtn: document.getElementById('findSubmitBtn'),
+    findGoLoginBtn: document.getElementById('findGoLoginBtn'),
+    recoveryOverlay: document.getElementById('recoveryOverlay'),
+    recoveryQuestion: document.getElementById('recoveryQuestion'),
+    recoveryAnswer: document.getElementById('recoveryAnswer'),
+    recoveryError: document.getElementById('recoveryError'),
+    recoverySaveBtn: document.getElementById('recoverySaveBtn'),
+    recoverySkipBtn: document.getElementById('recoverySkipBtn')
+  };
+
+  var ytPlayer = null;
+  var ytReady = false;
+  var bgmEnabled = true;
+  try {
+    bgmEnabled = localStorage.getItem('bgmEnabled') !== 'false';
+  } catch (e) {}
+
+  function onYouTubeIframeAPIReady() {
+    ytPlayer = new YT.Player('ytPlayer', {
+      videoId: 'zJO0t7qqso4', // 저작권 없는 클래식 음악(8시간 연속 재생) - Tempo Copyright Free Music
+      playerVars: {
+        loop: 1,
+        playlist: 'zJO0t7qqso4' // 유튜브 반복 재생 기능은 재생목록 지정이 있어야 동작해요
+      },
+      events: {
+        onReady: function () {
+          ytReady = true;
+        },
+        onStateChange: function (e) {
+          if (e.data === YT.PlayerState.ENDED) {
+            // 혹시 자동 반복이 안 걸릴 경우를 대비해 수동으로 다시 재생
+            ytPlayer.seekTo(0, true);
+            ytPlayer.playVideo();
+          }
+        }
+      }
+    });
+  }
+
+  function playMusic() {
+    if (bgmEnabled && ytReady && ytPlayer) ytPlayer.playVideo();
+  }
+
+  function pauseMusic() {
+    if (ytReady && ytPlayer) ytPlayer.pauseVideo();
+  }
+
+  function updateBgmButton() {
+    els.bgmToggleBtn.textContent = bgmEnabled ? '🔊 BGM 켜짐' : '🔇 BGM 꺼짐';
+  }
+
+  els.bgmToggleBtn.addEventListener('click', function () {
+    bgmEnabled = !bgmEnabled;
+    try {
+      localStorage.setItem('bgmEnabled', bgmEnabled);
+    } catch (e) {}
+    updateBgmButton();
+    if (bgmEnabled) {
+      if (running) playMusic();
+    } else {
+      pauseMusic();
+    }
+  });
+
+  updateBgmButton();
+
+  function showHome() {
+    pauseTimer();
+    els.pomodoroView.classList.add('hidden');
+    els.statsView.classList.add('hidden');
+    els.homeView.classList.remove('hidden');
+  }
+
+  function showPomodoro() {
+    els.homeView.classList.add('hidden');
+    els.statsView.classList.add('hidden');
+    els.pomodoroView.classList.remove('hidden');
+  }
+
+  function showStats() {
+    els.homeView.classList.add('hidden');
+    els.statsView.classList.remove('hidden');
+    refreshStats();
+  }
+
+  function openDiaryPopup() {
+    els.diaryOverlay.classList.remove('hidden');
+  }
+
+  function closeDiaryPopup() {
+    els.diaryOverlay.classList.add('hidden');
+  }
+
+  function showMoodTab() {
+    els.diaryTabMood.classList.add('active');
+    els.diaryTabChat.classList.remove('active');
+    els.diaryMoodView.classList.remove('hidden');
+    els.diaryChatView.classList.add('hidden');
+  }
+
+  function showChatTab() {
+    els.diaryTabChat.classList.add('active');
+    els.diaryTabMood.classList.remove('active');
+    els.diaryChatView.classList.remove('hidden');
+    els.diaryMoodView.classList.add('hidden');
+    scrollChatToBottom();
+  }
+
+  var WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
+
+  function refreshStats() {
+    if (!authToken) return;
+    google.script.run
+      .withSuccessHandler(renderStats)
+      .withFailureHandler(handleServerError)
+      .getStats(authToken);
+  }
+
+  function renderStats(stats) {
+    if (!stats) return;
+
+    els.todayCount.textContent = stats.todayCount;
+    els.streakBadge.textContent = '🔥 ' + stats.streak + '일 연속';
+
+    els.statsToday.textContent = stats.todayCount;
+    els.statsWeek.textContent = stats.weekCount;
+    els.statsTotal.textContent = stats.totalCount;
+    els.statsStreak.textContent = '🔥 ' + stats.streak + '일 연속 사용 중';
+
+    els.last7List.textContent = '';
+    var maxCount = 1;
+    (stats.last7 || []).forEach(function (day) {
+      if (day.count > maxCount) maxCount = day.count;
+    });
+
+    (stats.last7 || []).forEach(function (day) {
+      var d = new Date(day.date + 'T00:00:00');
+      var label = (d.getMonth() + 1) + '/' + d.getDate() + ' ' + WEEKDAY_LABELS[d.getDay()];
+
+      var row = document.createElement('div');
+      row.className = 'day-bar-row';
+
+      var labelEl = document.createElement('div');
+      labelEl.className = 'day-bar-label';
+      labelEl.textContent = label;
+
+      var track = document.createElement('div');
+      track.className = 'day-bar-track';
+      var fill = document.createElement('div');
+      fill.className = 'day-bar-fill';
+      fill.style.width = Math.round((day.count / maxCount) * 100) + '%';
+      track.appendChild(fill);
+
+      var countEl = document.createElement('div');
+      countEl.className = 'day-bar-count';
+      countEl.textContent = day.count;
+
+      row.appendChild(labelEl);
+      row.appendChild(track);
+      row.appendChild(countEl);
+      els.last7List.appendChild(row);
+    });
+  }
+
+  function characterEmoji(name) {
+    name = name || '';
+    if (name.indexOf('냥') !== -1) return '🐱';
+    if (name.indexOf('토끼') !== -1) return '🐰';
+    if (name.indexOf('병아리') !== -1) return '🐥';
+    return '🌟';
+  }
+
+  function formatTime(sec) {
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function updateTimerDisplay() {
+    els.timerDisplay.textContent = formatTime(timeLeft);
+
+    // Stitch 디자인의 동그란 진행 링: 남은 시간만큼 분홍(집중)/노랑(쉬는시간) 선이 줄어들어요
+    var ring = document.getElementById('timerRingFill');
+    if (ring) {
+      var total = mode === 'focus' ? FOCUS_SECONDS : BREAK_SECONDS;
+      ring.style.strokeDashoffset = 640.88 * (1 - timeLeft / total);
+      ring.setAttribute('stroke', mode === 'focus' ? '#FFB5C2' : '#FFE08A');
+    }
+  }
+
+  function setMode(newMode) {
+    mode = newMode;
+    if (mode === 'focus') {
+      timeLeft = FOCUS_SECONDS;
+      els.modeLabel.textContent = '집중 시간';
+      els.modeLabel.className = 'mode-label mode-focus';
+      els.focusView.classList.remove('hidden');
+      els.breakView.classList.add('hidden');
+    } else {
+      timeLeft = BREAK_SECONDS;
+      els.modeLabel.textContent = '쉬는 시간';
+      els.modeLabel.className = 'mode-label mode-break';
+      els.focusView.classList.add('hidden');
+      els.breakView.classList.remove('hidden');
+    }
+    updateTimerDisplay();
+  }
+
+  function startTimer() {
+    if (running) return;
+    running = true;
+    els.startPauseBtn.textContent = '일시정지';
+    playMusic();
+    timerId = setInterval(function () {
+      timeLeft--;
+      updateTimerDisplay();
+      if (timeLeft <= 0) {
+        clearInterval(timerId);
+        running = false;
+        els.startPauseBtn.textContent = '시작';
+        onTimerEnd();
+      }
+    }, 1000);
+  }
+
+  function pauseTimer() {
+    running = false;
+    els.startPauseBtn.textContent = '시작';
+    clearInterval(timerId);
+    pauseMusic();
+  }
+
+  function onTimerEnd() {
+    if (mode === 'focus') {
+      setMode('break');
+      missionSource = 'break';
+      showMissionPopup();
+    } else {
+      setMode('focus');
+    }
+  }
+
+  function openStandaloneMission() {
+    missionSource = 'standalone';
+    showMissionPopup();
+  }
+
+  function showMissionPopup() {
+    if (missions.length === 0) {
+      currentMission = { id: '', content: '잠깐 눈을 감고 깊게 숨쉬어보기', character: '모찌냥' };
+    } else {
+      currentMission = missions[Math.floor(Math.random() * missions.length)];
+    }
+    els.missionCharEmoji.textContent = characterEmoji(currentMission.character);
+    els.missionCharName.textContent = currentMission.character || '';
+    els.missionContent.textContent = currentMission.content || '';
+    showRandomQuote();
+    prepareClassic();
+    els.missionOverlay.classList.remove('hidden');
+  }
+
+  function showRandomQuote() {
+    els.quoteText.textContent = '';
+    els.songReco.textContent = '🎵 미션을 완료하면 힐링 클래식이 흘러나와요';
+
+    if (quotes.length === 0) return;
+
+    var pick = quotes[Math.floor(Math.random() * quotes.length)];
+
+    if (pick.quote) {
+      els.quoteText.textContent = '💬 ' + pick.quote;
+    }
+  }
+
+  /* ---------- 미션 완료 보상: 힐링 클래식 (유튜브 영상을 화면 안에서 바로 재생) ---------- */
+  var classicPick = null;      // 서버가 골라준 곡 { title, composer, videoId }
+  var classicPlayer = null;    // 화면 안 유튜브 플레이어
+  var classicWanted = false;   // 도장 화면이 떠서 지금 재생해야 하는지
+  var classicReady = false;    // 플레이어 준비가 끝났는지
+
+  // 미션 팝업이 뜰 때 미리 곡을 골라 둬서, "미션 완료!"를 누르면 바로 나오게 해요
+  function prepareClassic() {
+    classicPick = null;
+    google.script.run
+      .withSuccessHandler(function (pick) {
+        classicPick = pick;
+        if (classicWanted) playClassic();
+      })
+      .withFailureHandler(function (err) {
+        console.error(err);
+        classicPick = { title: '힐링 클래식 모음', composer: '', videoId: 'zJO0t7qqso4' };
+        if (classicWanted) playClassic();
+      })
+      .getHealingClassic();
+  }
+
+  function playClassic() {
+    if (!classicPick) {
+      els.classicTitle.textContent = '곡을 고르는 중이에요...';
+      return;
+    }
+    els.classicTitle.textContent = classicPick.title + (classicPick.composer ? ' · ' + classicPick.composer : '');
+    pauseMusic(); // 배경음악과 겹치지 않게 잠깐 멈춤
+
+    if (!(window.YT && YT.Player)) return;
+    if (!classicPlayer) {
+      classicPlayer = new YT.Player('classicPlayer', {
+        videoId: classicPick.videoId,
+        playerVars: { rel: 0, playsinline: 1, modestbranding: 1 },
+        events: {
+          onReady: function (e) {
+            classicReady = true;
+            if (classicWanted) e.target.playVideo();
+          }
+        }
+      });
+    } else if (classicReady) {
+      classicPlayer.loadVideoById(classicPick.videoId);
+    }
+  }
+
+  function stopClassic() {
+    classicWanted = false;
+    if (classicReady && classicPlayer) classicPlayer.stopVideo();
+  }
+
+  function hideMissionPopup() {
+    els.missionOverlay.classList.add('hidden');
+  }
+
+  function completeMission() {
+    hideMissionPopup();
+
+    var reward = (currentMission && currentMission.reward_message) || '참 잘했어요! 다음 집중도 화이팅이에요 💪';
+    els.stampMessage.textContent = reward;
+    els.stampNextBtn.textContent = missionSource === 'break' ? '다음 집중 시작하기 🍅' : '홈으로 돌아가기 🏡';
+    els.stampOverlay.classList.remove('hidden');
+
+    classicWanted = true;
+    playClassic();
+
+    google.script.run
+      .withSuccessHandler(function () {
+        refreshStats();
+      })
+      .withFailureHandler(handleServerError)
+      .logCompletion(authToken, {
+        session_type: missionSource,
+        mission_id: currentMission ? currentMission.id : '',
+        completed: true,
+        note: ''
+      });
+  }
+
+  // 음악을 충분히 듣고 나서 버튼을 누르면 다음으로 넘어가요 (예전처럼 2초 만에 자동으로 닫히지 않음)
+  function closeStamp() {
+    stopClassic();
+    els.stampOverlay.classList.add('hidden');
+    if (missionSource === 'break') {
+      setMode('focus');
+      startTimer();
+    } else {
+      showHome();
+    }
+  }
+
+  function skipMission() {
+    hideMissionPopup();
+    google.script.run
+      .withFailureHandler(handleServerError)
+      .logCompletion(authToken, {
+        session_type: missionSource,
+        mission_id: currentMission ? currentMission.id : '',
+        completed: false,
+        note: 'skipped'
+      });
+    if (missionSource === 'break') {
+      setMode('focus');
+    } else {
+      showHome();
+    }
+  }
+
+  els.cardPomodoro.addEventListener('click', function () {
+    showPomodoro();
+  });
+
+  els.cardMission.addEventListener('click', openStandaloneMission);
+
+  els.cardStats.addEventListener('click', showStats);
+
+  els.diaryFab.addEventListener('click', openDiaryPopup);
+
+  els.diaryOverlay.addEventListener('click', function (e) {
+    if (e.target === els.diaryOverlay) closeDiaryPopup();
+  });
+
+  els.diaryTabMood.addEventListener('click', showMoodTab);
+  els.diaryTabChat.addEventListener('click', showChatTab);
+
+  els.backToHomeBtn.addEventListener('click', showHome);
+
+  els.statsBackBtn.addEventListener('click', showHome);
+
+  var selectedMood = '😊 뿌듯함';
+  var selectedPomoLevel = 5;
+  var pomoComments = [
+    '1점 • 천천히 쉬어가도 괜찮아요 🍃',
+    '2점 • 시작한 것만으로도 멋져요 🌱',
+    '3점 • 편안하게 잘 집중했어요 🌿',
+    '4점 • 아주 훌륭한 몰입이었어요 ✨',
+    '5점 • 완벽한 몰입! 🍅'
+  ];
+
+  function initMoodPicker() {
+    var moodBtns = document.querySelectorAll('.mood-btn');
+    moodBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        moodBtns.forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        selectedMood = btn.getAttribute('data-mood') || '';
+        if (els.selectedWeatherLabel) {
+          els.selectedWeatherLabel.textContent = selectedMood;
+        }
+      });
+    });
+  }
+
+  function updatePomoStamps(level) {
+    selectedPomoLevel = level;
+    var stampBtns = document.querySelectorAll('.pomo-stamp-btn');
+    stampBtns.forEach(function (b) {
+      var bLevel = parseInt(b.getAttribute('data-level') || '1', 10);
+      if (bLevel <= level) {
+        b.classList.add('active');
+      } else {
+        b.classList.remove('active');
+      }
+    });
+    if (els.pomoScoreText) {
+      els.pomoScoreText.textContent = pomoComments[level - 1] || (level + '점 • 몰입 완료! 🍅');
+    }
+  }
+
+  function initPomoStamps() {
+    var stampBtns = document.querySelectorAll('.pomo-stamp-btn');
+    stampBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var level = parseInt(btn.getAttribute('data-level') || '5', 10);
+        updatePomoStamps(level);
+      });
+    });
+    updatePomoStamps(5);
+  }
+
+  if (els.closeDiaryBtn) {
+    els.closeDiaryBtn.addEventListener('click', closeDiaryPopup);
+  }
+  if (els.dismissDiaryBtn) {
+    els.dismissDiaryBtn.addEventListener('click', closeDiaryPopup);
+  }
+
+  if (els.diaryInput) {
+    els.diaryInput.addEventListener('input', function () {
+      if (els.charCount) {
+        els.charCount.textContent = els.diaryInput.value.length + ' / 100자';
+      }
+    });
+  }
+
+  initMoodPicker();
+  initPomoStamps();
+
+  els.diarySaveBtn.addEventListener('click', function () {
+    var content = els.diaryInput.value.trim();
+    if (!content && !selectedMood) return;
+
+    els.diarySaveBtn.disabled = true;
+    els.diarySaveBtn.textContent = '저장 중...';
+
+    google.script.run
+      .withSuccessHandler(function () {
+        els.diaryInput.value = '';
+        if (els.charCount) els.charCount.textContent = '0 / 100자';
+        els.diarySaveBtn.disabled = false;
+        els.diarySaveBtn.textContent = '일기장에 소중히 보관하기 🌸';
+        els.diarySavedMsg.classList.remove('hidden');
+        setTimeout(function () {
+          els.diarySavedMsg.classList.add('hidden');
+          closeDiaryPopup();
+        }, 1500);
+      })
+      .withFailureHandler(function (err) {
+        els.diarySaveBtn.disabled = false;
+        els.diarySaveBtn.textContent = '일기장에 소중히 보관하기 🌸';
+        if (isLoginError(err)) return handleServerError(err);
+        alert('저장하지 못했어요: ' + err);
+      })
+      .addDiaryEntry(authToken, content, selectedMood, selectedPomoLevel);
+  });
+
+  function scrollChatToBottom() {
+    els.diaryChatLog.scrollTop = els.diaryChatLog.scrollHeight;
+  }
+
+  function appendChatBubble(role, text) {
+    var bubble = document.createElement('div');
+    bubble.className = 'chat-bubble ' + (role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai');
+    bubble.textContent = text;
+    els.diaryChatLog.appendChild(bubble);
+    scrollChatToBottom();
+    return bubble;
+  }
+
+  els.diaryAskBtn.addEventListener('click', function () {
+    var question = els.diaryQuestionInput.value.trim();
+    if (!question) return;
+
+    appendChatBubble('user', question);
+    els.diaryQuestionInput.value = '';
+
+    els.diaryAskBtn.disabled = true;
+    var thinkingBubble = appendChatBubble('ai', '생각하는 중...');
+
+    google.script.run
+      .withSuccessHandler(function (result) {
+        els.diaryAskBtn.disabled = false;
+        thinkingBubble.textContent = result.answer || '';
+
+        if (result.sources && result.sources.length > 0) {
+          var sourcesLabel = document.createElement('div');
+          sourcesLabel.className = 'diary-sources-label';
+          sourcesLabel.textContent = '📼 참고한 기록';
+          thinkingBubble.appendChild(sourcesLabel);
+
+          result.sources.forEach(function (s) {
+            var row = document.createElement('div');
+            row.className = 'diary-source-item';
+            var strong = document.createElement('strong');
+            strong.textContent = s.date + (s.tags ? ' · ' + s.tags : '') + ' ';
+            row.appendChild(strong);
+            row.appendChild(document.createTextNode(s.content));
+            thinkingBubble.appendChild(row);
+          });
+        }
+
+        scrollChatToBottom();
+      })
+      .withFailureHandler(function (err) {
+        els.diaryAskBtn.disabled = false;
+        if (isLoginError(err)) return handleServerError(err);
+        thinkingBubble.textContent = '답변을 가져오지 못했어요: ' + err;
+        scrollChatToBottom();
+      })
+      .askDiaryAI(authToken, question);
+  });
+
+  els.diaryQuestionInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      els.diaryAskBtn.click();
+    }
+  });
+
+  els.startPauseBtn.addEventListener('click', function () {
+    if (running) {
+      pauseTimer();
+    } else {
+      startTimer();
+    }
+  });
+
+  els.resetBtn.addEventListener('click', function () {
+    pauseTimer();
+    setMode(mode);
+  });
+
+  els.missionDoneBtn.addEventListener('click', completeMission);
+  els.missionSkipBtn.addEventListener('click', skipMission);
+  els.stampNextBtn.addEventListener('click', closeStamp);
+
+  /* ======================= 로그인 / 회원가입 ======================= */
+  var AI_GREETING = '안녕하세요! 지금까지 쓴 기록에 대해 무엇이든 물어보세요 😊';
+
+  function setAuthMode(newMode) {
+    authMode = newMode;
+    var isSignup = newMode === 'signup';
+    els.authTabLogin.classList.toggle('active', !isSignup);
+    els.authTabSignup.classList.toggle('active', isSignup);
+    document.querySelectorAll('.signup-only').forEach(function (el) {
+      el.classList.toggle('hidden', !isSignup);
+    });
+    els.authPassword.setAttribute('autocomplete', isSignup ? 'new-password' : 'current-password');
+    els.authSubmitBtn.textContent = isSignup ? '가입하고 시작하기 🌱' : '로그인하고 시작하기 🌷';
+    els.authHint.textContent = isSignup
+      ? '이미 가입했다면 로그인 탭에서 바로 시작할 수 있어요'
+      : '처음이라면 회원가입 탭에서 1분 만에 가입할 수 있어요';
+    hideAuthError();
+  }
+
+  function showAuthError(msg) {
+    els.authError.textContent = msg;
+    els.authError.classList.remove('hidden');
+  }
+  function hideAuthError() {
+    els.authError.classList.add('hidden');
+  }
+
+  function showAuth() {
+    els.appMain.classList.add('hidden');
+    els.diaryFab.classList.add('hidden');
+    els.findView.classList.add('hidden');
+    els.authView.classList.remove('hidden');
+  }
+
+  function enterApp(user) {
+    currentUser = user;
+    authToken = user.token;
+    saveToken(user.token);
+
+    els.userGreeting.textContent = '🌷 ' + user.nickname + '님, 반가워요';
+    els.authPassword.value = '';
+    els.authPassword2.value = '';
+    hideAuthError();
+
+    // 다른 사람이 쓰던 대화가 남지 않게 AI 대화창을 처음 상태로
+    els.diaryChatLog.textContent = '';
+    appendChatBubble('ai', AI_GREETING);
+
+    els.authView.classList.add('hidden');
+    els.appMain.classList.remove('hidden');
+    els.diaryFab.classList.remove('hidden');
+    showHome();
+    refreshStats();
+
+    // 찾기 질문이 없는 예전 계정이면 한 번 등록을 권해요
+    if (!user.hasRecovery) {
+      els.recoveryAnswer.value = '';
+      els.recoveryError.classList.add('hidden');
+      els.recoveryOverlay.classList.remove('hidden');
+    }
+  }
+
+  function logout() {
+    pauseTimer();
+    stopClassic();
+    setMode('focus');
+    authToken = null;
+    currentUser = null;
+    clearToken();
+    [els.missionOverlay, els.stampOverlay, els.diaryOverlay, els.recoveryOverlay].forEach(function (o) { o.classList.add('hidden'); });
+    els.todayCount.textContent = '0';
+    els.streakBadge.textContent = '🔥 0일 연속';
+    setAuthMode('login');
+    showAuth();
+  }
+
+  els.authTabLogin.addEventListener('click', function () { setAuthMode('login'); });
+  els.authTabSignup.addEventListener('click', function () { setAuthMode('signup'); });
+  els.logoutBtn.addEventListener('click', logout);
+
+  els.authForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    hideAuthError();
+
+    var username = els.authUsername.value.trim();
+    var password = els.authPassword.value;
+    if (!username || !password) {
+      showAuthError('아이디와 비밀번호를 모두 입력해 주세요.');
+      return;
+    }
+    if (authMode === 'signup' && password !== els.authPassword2.value) {
+      showAuthError('비밀번호 확인이 서로 달라요. 다시 한 번 입력해 주세요.');
+      return;
+    }
+    if (authMode === 'signup' && !els.authAnswer.value.trim()) {
+      showAuthError('찾기 질문의 답변을 입력해 주세요.');
+      return;
+    }
+
+    var originalLabel = els.authSubmitBtn.textContent;
+    els.authSubmitBtn.disabled = true;
+    els.authSubmitBtn.textContent = authMode === 'signup' ? '가입하는 중...' : '로그인하는 중...';
+
+    function done(res) {
+      els.authSubmitBtn.disabled = false;
+      els.authSubmitBtn.textContent = originalLabel;
+      if (res && res.ok) {
+        enterApp(res.user);
+      } else {
+        showAuthError((res && res.message) || '잠시 후 다시 시도해 주세요.');
+      }
+    }
+    function fail(err) {
+      done({ ok: false, message: '문제가 생겼어요: ' + err });
+    }
+
+    if (authMode === 'signup') {
+      google.script.run.withSuccessHandler(done).withFailureHandler(fail)
+        .signUp(username, password, els.authNickname.value.trim(), els.authQuestion.value, els.authAnswer.value);
+    } else {
+      google.script.run.withSuccessHandler(done).withFailureHandler(fail)
+        .logIn(username, password);
+    }
+  });
+
+  /* ======================= 아이디 / 비밀번호 찾기 ======================= */
+  // 서버(Code.gs)의 RECOVERY_QUESTIONS와 똑같은 목록
+  var RECOVERY_QUESTIONS = [
+    '어릴 적 별명은?',
+    '처음 키운 반려동물 이름은?',
+    '가장 기억에 남는 여행지는?',
+    '가장 좋아하는 음식은?',
+    '다녔던 초등학교 이름은?'
+  ];
+  document.querySelectorAll('.recovery-select').forEach(function (select) {
+    RECOVERY_QUESTIONS.forEach(function (q) {
+      var opt = document.createElement('option');
+      opt.value = q;
+      opt.textContent = q;
+      select.appendChild(opt);
+    });
+  });
+
+  var findMode = 'id'; // 'id'(아이디 찾기) 또는 'reset'(비밀번호 재설정)
+
+  function setFindMode(newMode) {
+    findMode = newMode;
+    var isReset = newMode === 'reset';
+    els.findTabId.classList.toggle('active', !isReset);
+    els.findTabReset.classList.toggle('active', isReset);
+    document.querySelectorAll('.find-id-only').forEach(function (el) { el.classList.toggle('hidden', isReset); });
+    document.querySelectorAll('.find-reset-only').forEach(function (el) { el.classList.toggle('hidden', !isReset); });
+    els.findSubmitBtn.textContent = isReset ? '비밀번호 새로 정하기 🔑' : '아이디 찾기 🔍';
+    els.findError.classList.add('hidden');
+    els.findResult.classList.add('hidden');
+    els.findGoLoginBtn.classList.add('hidden');
+  }
+
+  function showFind() {
+    els.authView.classList.add('hidden');
+    els.findView.classList.remove('hidden');
+    els.findAnswer.value = '';
+    els.findNewPassword.value = '';
+    els.findNewPassword2.value = '';
+    setFindMode('id');
+  }
+
+  var foundUsername = '';
+
+  function goLoginWith(username) {
+    if (username) els.authUsername.value = username;
+    setAuthMode('login');
+    showAuth();
+    els.authPassword.focus();
+  }
+
+  els.findLinkBtn.addEventListener('click', showFind);
+  els.findBackBtn.addEventListener('click', function () { goLoginWith(''); });
+  els.findTabId.addEventListener('click', function () { setFindMode('id'); });
+  els.findTabReset.addEventListener('click', function () { setFindMode('reset'); });
+  els.findGoLoginBtn.addEventListener('click', function () { goLoginWith(foundUsername); });
+
+  els.findForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    els.findError.classList.add('hidden');
+    els.findResult.classList.add('hidden');
+    els.findGoLoginBtn.classList.add('hidden');
+
+    function showFindError(msg) {
+      els.findError.textContent = msg;
+      els.findError.classList.remove('hidden');
+    }
+
+    var question = els.findQuestion.value;
+    var answer = els.findAnswer.value.trim();
+    if (!answer) return showFindError('답변을 입력해 주세요.');
+
+    if (findMode === 'reset') {
+      if (!els.findUsername.value.trim()) return showFindError('아이디를 입력해 주세요.');
+      if (els.findNewPassword.value !== els.findNewPassword2.value) {
+        return showFindError('새 비밀번호 확인이 서로 달라요. 다시 한 번 입력해 주세요.');
+      }
+    } else if (!els.findNickname.value.trim()) {
+      return showFindError('닉네임을 입력해 주세요.');
+    }
+
+    var originalLabel = els.findSubmitBtn.textContent;
+    els.findSubmitBtn.disabled = true;
+    els.findSubmitBtn.textContent = '확인하는 중...';
+
+    function done(res) {
+      els.findSubmitBtn.disabled = false;
+      els.findSubmitBtn.textContent = originalLabel;
+      if (!res || !res.ok) return showFindError((res && res.message) || '잠시 후 다시 시도해 주세요.');
+
+      if (findMode === 'reset') {
+        foundUsername = els.findUsername.value.trim();
+        els.findResult.textContent = '🌷 ' + res.message;
+      } else {
+        foundUsername = res.usernames[0];
+        els.findResult.textContent = '🌷 가입하신 아이디는 「' + res.usernames.join('」, 「') + '」 이에요!';
+      }
+      els.findResult.classList.remove('hidden');
+      els.findGoLoginBtn.classList.remove('hidden');
+    }
+    function fail(err) {
+      done({ ok: false, message: '문제가 생겼어요: ' + err });
+    }
+
+    if (findMode === 'reset') {
+      google.script.run.withSuccessHandler(done).withFailureHandler(fail)
+        .resetPassword(els.findUsername.value.trim(), question, answer, els.findNewPassword.value);
+    } else {
+      google.script.run.withSuccessHandler(done).withFailureHandler(fail)
+        .findUsername(els.findNickname.value.trim(), question, answer);
+    }
+  });
+
+  // 예전 계정용: 로그인 후 찾기 질문 등록
+  els.recoverySkipBtn.addEventListener('click', function () {
+    els.recoveryOverlay.classList.add('hidden');
+  });
+
+  els.recoverySaveBtn.addEventListener('click', function () {
+    var answer = els.recoveryAnswer.value.trim();
+    if (!answer) {
+      els.recoveryError.textContent = '답변을 입력해 주세요.';
+      els.recoveryError.classList.remove('hidden');
+      return;
+    }
+    els.recoverySaveBtn.disabled = true;
+    google.script.run
+      .withSuccessHandler(function (res) {
+        els.recoverySaveBtn.disabled = false;
+        if (res && res.ok) {
+          if (currentUser) currentUser.hasRecovery = true;
+          els.recoveryOverlay.classList.add('hidden');
+        } else {
+          els.recoveryError.textContent = (res && res.message) || '잠시 후 다시 시도해 주세요.';
+          els.recoveryError.classList.remove('hidden');
+        }
+      })
+      .withFailureHandler(function (err) {
+        els.recoverySaveBtn.disabled = false;
+        handleServerError(err);
+      })
+      .setRecovery(authToken, els.recoveryQuestion.value, answer);
+  });
+
+  // 처음 열 때: 이 기기에 저장된 로그인 정보가 있으면 바로 들어가고, 없으면 로그인 화면
+  (function initAuth() {
+    var saved = loadToken();
+    if (!saved) {
+      showAuth();
+      return;
+    }
+    google.script.run
+      .withSuccessHandler(function (res) {
+        if (res && res.ok) enterApp(res.user);
+        else { clearToken(); showAuth(); }
+      })
+      .withFailureHandler(function () { showAuth(); })
+      .whoAmI(saved);
+  })();
+
+  setMode('focus');
+
+  google.script.run
+    .withSuccessHandler(function (list) {
+      missions = list || [];
+    })
+    .withFailureHandler(function (err) {
+      console.error(err);
+    })
+    .getActiveMissions();
+
+  google.script.run
+    .withSuccessHandler(function (list) {
+      quotes = list || [];
+    })
+    .withFailureHandler(function (err) {
+      console.error(err);
+    })
+    .getActiveQuotes();
+</script>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <?!= include('Style'); ?>
+</head>
+<body>
+  <!-- 로그인 / 회원가입 화면 (Stitch 로그인 화면 디자인) -->
+  <div class="auth-view hidden" id="authView">
+    <div class="auth-hero">
+      <div class="auth-logo">🌸<span class="auth-logo-spark">✨</span></div>
+      <h1 class="auth-title">스몰 힐링 뽀모도로</h1>
+      <div class="auth-subtitle">나만의 힐링 기록을 차곡차곡 모아봐요</div>
+    </div>
+
+    <div class="auth-card">
+      <div class="auth-tab-row">
+        <button class="auth-tab active" id="authTabLogin" type="button">로그인</button>
+        <button class="auth-tab" id="authTabSignup" type="button">회원가입</button>
+      </div>
+
+      <form id="authForm" autocomplete="on">
+        <label class="auth-label" for="authUsername">아이디</label>
+        <input class="auth-input" id="authUsername" type="text" autocomplete="username" placeholder="아이디 입력" maxlength="20">
+
+        <div class="signup-only hidden">
+          <label class="auth-label" for="authNickname">닉네임</label>
+          <input class="auth-input" id="authNickname" type="text" placeholder="앱에서 불러드릴 이름 (예: 민정)" maxlength="12">
+        </div>
+
+        <label class="auth-label" for="authPassword">비밀번호</label>
+        <input class="auth-input" id="authPassword" type="password" autocomplete="current-password" placeholder="비밀번호 입력 (4자 이상)">
+
+        <div class="signup-only hidden">
+          <label class="auth-label" for="authPassword2">비밀번호 확인</label>
+          <input class="auth-input" id="authPassword2" type="password" autocomplete="new-password" placeholder="비밀번호 한 번 더 입력">
+
+          <div class="auth-section-note">🔑 아이디·비밀번호를 잊었을 때 찾을 수 있도록 질문을 하나 정해 주세요</div>
+          <label class="auth-label" for="authQuestion">찾기 질문</label>
+          <select class="auth-input recovery-select" id="authQuestion"></select>
+          <label class="auth-label" for="authAnswer">답변</label>
+          <input class="auth-input" id="authAnswer" type="text" placeholder="나만 아는 답변 입력">
+        </div>
+
+        <div class="auth-error hidden" id="authError"></div>
+
+        <button class="btn-primary auth-submit" id="authSubmitBtn" type="submit">로그인하고 시작하기 🌷</button>
+      </form>
+
+      <button class="find-link" id="findLinkBtn" type="button">아이디 · 비밀번호를 잊으셨나요?</button>
+    </div>
+
+    <div class="auth-hint" id="authHint">처음이라면 회원가입 탭에서 1분 만에 가입할 수 있어요</div>
+    <div class="auth-footer">☕ 따뜻하고 평온한 하루를 응원해요</div>
+  </div>
+
+  <!-- 아이디 / 비밀번호 찾기 화면 (Stitch 계정 찾기 화면 디자인) -->
+  <div class="auth-view hidden" id="findView">
+    <button class="find-back" id="findBackBtn" type="button">← 로그인으로</button>
+
+    <div class="auth-hero">
+      <div class="auth-logo find-logo">🔑</div>
+      <h1 class="auth-title">계정 찾기</h1>
+      <div class="auth-subtitle">가입할 때 정한 찾기 질문으로 찾을 수 있어요</div>
+    </div>
+
+    <div class="auth-card">
+      <div class="auth-tab-row">
+        <button class="auth-tab active" id="findTabId" type="button">아이디 찾기</button>
+        <button class="auth-tab" id="findTabReset" type="button">비밀번호 재설정</button>
+      </div>
+
+      <form id="findForm" autocomplete="off">
+        <div class="find-id-only">
+          <label class="auth-label" for="findNickname">닉네임</label>
+          <input class="auth-input" id="findNickname" type="text" placeholder="가입할 때 정한 닉네임" maxlength="12">
+        </div>
+
+        <div class="find-reset-only hidden">
+          <label class="auth-label" for="findUsername">아이디</label>
+          <input class="auth-input" id="findUsername" type="text" placeholder="아이디를 입력해 주세요" maxlength="20">
+        </div>
+
+        <label class="auth-label" for="findQuestion">찾기 질문</label>
+        <select class="auth-input recovery-select" id="findQuestion"></select>
+
+        <label class="auth-label" for="findAnswer">답변</label>
+        <input class="auth-input" id="findAnswer" type="text" placeholder="설정한 답변을 입력해 주세요">
+
+        <div class="find-reset-only hidden">
+          <label class="auth-label" for="findNewPassword">새 비밀번호</label>
+          <input class="auth-input" id="findNewPassword" type="password" autocomplete="new-password" placeholder="새 비밀번호 (4자 이상)">
+          <label class="auth-label" for="findNewPassword2">새 비밀번호 확인</label>
+          <input class="auth-input" id="findNewPassword2" type="password" autocomplete="new-password" placeholder="한 번 더 입력">
+        </div>
+
+        <div class="auth-error hidden" id="findError"></div>
+        <div class="find-result hidden" id="findResult"></div>
+
+        <button class="btn-primary auth-submit" id="findSubmitBtn" type="submit">아이디 찾기 🔍</button>
+      </form>
+
+      <button class="find-link hidden" id="findGoLoginBtn" type="button">이 아이디로 로그인하러 가기 →</button>
+    </div>
+
+    <div class="auth-hint">찾기 질문을 정하지 않았다면 관리자에게 문의해 주세요</div>
+    <div class="auth-footer">☕ 따뜻하고 평온한 하루를 응원해요</div>
+  </div>
+
+  <!-- 찾기 질문이 없는 예전 계정에게 한 번 물어보는 팝업 -->
+  <div class="overlay hidden" id="recoveryOverlay">
+    <div class="mission-card recovery-card">
+      <div class="auth-logo find-logo recovery-logo">🔑</div>
+      <div class="recovery-title">찾기 질문을 정해 주세요</div>
+      <div class="recovery-desc">나중에 아이디나 비밀번호를 잊었을 때<br>이 질문의 답으로 다시 찾을 수 있어요</div>
+      <select class="auth-input recovery-select" id="recoveryQuestion"></select>
+      <input class="auth-input recovery-answer" id="recoveryAnswer" type="text" placeholder="나만 아는 답변 입력">
+      <div class="auth-error hidden" id="recoveryError"></div>
+      <button class="btn-primary auth-submit" id="recoverySaveBtn" type="button">저장하기 🌷</button>
+      <button class="mission-skip" id="recoverySkipBtn" type="button">다음에 할게요</button>
+    </div>
+  </div>
+
+  <div class="app hidden" id="appMain">
+    <div class="user-bar">
+      <span class="user-greeting" id="userGreeting">🌷 반가워요</span>
+      <button class="logout-link" id="logoutBtn" type="button">로그아웃</button>
+    </div>
+
+    <div class="app-title-group">
+      <h1>🌸 스몰 힐링 뽀모도로</h1>
+      <div class="subtitle">25분 집중하고, 5분은 작은 힐링 미션으로 쉬어가요</div>
+    </div>
+
+    <div class="badge-row">
+      <div class="count-badge">오늘 완료한 힐링 세션 <strong id="todayCount">0</strong>회 💮</div>
+      <div class="streak-badge" id="streakBadge">🔥 0일 연속</div>
+    </div>
+
+    <!-- 배경 음악: 타이머 시작/일시정지에 맞춰 자동으로 재생돼요 -->
+    <div class="yt-hidden"><div id="ytPlayer"></div></div>
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <!-- 홈 화면: 뽀모도로 / 미션 중 선택 -->
+    <div id="homeView">
+      <div class="nav-card nav-pink" id="cardPomodoro">
+        <div class="nav-emoji">🍅</div>
+        <div class="nav-text">
+          <div class="nav-title">뽀모도로 집중</div>
+          <div class="nav-desc">25분 집중 + 5분 쉬는시간을 통째로</div>
+        </div>
+        <div class="nav-chevron">›</div>
+      </div>
+      <div class="nav-card nav-yellow" id="cardMission">
+        <div class="nav-emoji">🎲</div>
+        <div class="nav-text">
+          <div class="nav-title">힐링 미션만 바로 하기</div>
+          <div class="nav-desc">타이머 없이 미션 1개 바로 받기</div>
+        </div>
+        <div class="nav-chevron">›</div>
+      </div>
+      <div class="nav-card nav-blue" id="cardStats">
+        <div class="nav-emoji">📊</div>
+        <div class="nav-text">
+          <div class="nav-title">나의 기록 보기</div>
+          <div class="nav-desc">지금까지 쌓인 기록 확인하기</div>
+        </div>
+        <div class="nav-chevron">›</div>
+      </div>
+      <div class="home-footer">오늘도 무리하지 말고 천천히 해봐요 🌱</div>
+    </div>
+
+    <!-- 나의 기록 화면 -->
+    <div id="statsView" class="hidden">
+      <button class="back-link" id="statsBackBtn">← 홈으로</button>
+      <div class="main-card">
+        <div class="stats-row">
+          <div class="stats-item">
+            <div class="stats-number" id="statsToday">0</div>
+            <div class="stats-caption">오늘</div>
+          </div>
+          <div class="stats-item">
+            <div class="stats-number" id="statsWeek">0</div>
+            <div class="stats-caption">이번 주</div>
+          </div>
+          <div class="stats-item">
+            <div class="stats-number" id="statsTotal">0</div>
+            <div class="stats-caption">전체</div>
+          </div>
+        </div>
+        <div class="stats-streak" id="statsStreak">🔥 0일 연속 사용 중</div>
+        <div class="mission-divider"></div>
+        <div class="stats-sub-label">최근 7일</div>
+        <div id="last7List"></div>
+      </div>
+    </div>
+
+    <!-- 뽀모도로 화면 -->
+    <div id="pomodoroView" class="hidden">
+      <button class="back-link" id="backToHomeBtn">← 홈으로</button>
+      <div class="main-card">
+        <div id="modeLabel" class="mode-label mode-focus">집중 시간</div>
+
+        <div id="focusView">
+          <div class="focus-emoji">
+            <span class="emoji-item">✍️</span>
+            <span class="emoji-item">📝</span>
+            <span class="emoji-item">✨</span>
+          </div>
+          <div class="focus-caption">열심히 집중하는 중... ✨</div>
+        </div>
+
+        <div id="breakView" class="hidden">
+          <div class="focus-emoji">
+            <span class="emoji-item">🌿</span>
+            <span class="emoji-item">🍵</span>
+            <span class="emoji-item">😌</span>
+          </div>
+          <div class="focus-caption">잠깐 쉬면서 힐링 미션을 해봐요</div>
+        </div>
+
+        <div class="timer-ring">
+          <svg viewBox="0 0 240 240" aria-hidden="true">
+            <circle cx="120" cy="120" r="102" fill="none" stroke="#F3EEF2" stroke-width="12"></circle>
+            <circle id="timerRingFill" class="timer-ring-fill" cx="120" cy="120" r="102" fill="none"
+              stroke="#FFB5C2" stroke-width="12" stroke-linecap="round"
+              stroke-dasharray="640.88" stroke-dashoffset="0" transform="rotate(-90 120 120)"></circle>
+          </svg>
+          <div class="timer-ring-center">
+            <div class="timer-ring-label">남은 시간</div>
+            <div class="timer" id="timerDisplay">25:00</div>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button class="btn-primary" id="startPauseBtn">시작</button>
+          <button class="btn-ghost" id="resetBtn">초기화</button>
+        </div>
+
+        <button class="bgm-toggle" id="bgmToggleBtn">🔊 BGM 켜짐</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 어디서든 바로 열 수 있는 일기장 버튼 -->
+  <button class="diary-fab hidden" id="diaryFab">📔</button>
+
+  <!-- 나의 일기장 팝업 -->
+  <div class="overlay hidden" id="diaryOverlay">
+    <div class="diary-popup">
+      <div class="diary-handle"></div>
+
+      <div class="diary-tab-row">
+        <button class="diary-tab active" id="diaryTabMood">📝 기분 기록</button>
+        <button class="diary-tab" id="diaryTabChat">🤖 AI에게 물어보기</button>
+      </div>
+
+      <div id="diaryMoodView">
+        <div class="notebook-card healing-diary-card">
+          <div class="healing-diary-header">
+            <div class="healing-title-group">
+              <span class="healing-badge">세션 완료 리추얼</span>
+              <div class="notebook-header">오늘의 힐링 한 줄 일기장 📝</div>
+            </div>
+            <button class="diary-close-x" id="closeDiaryBtn" type="button" aria-label="닫기">✕</button>
+          </div>
+
+          <!-- 1. 오늘의 마음 날씨 (감정 이모지 선택) -->
+          <div class="healing-section">
+            <div class="healing-section-header">
+              <span class="healing-section-title">✨ 오늘의 마음 날씨</span>
+              <span class="mood-weather-badge" id="selectedWeatherLabel">😊 뿌듯함</span>
+            </div>
+            <div class="emotion-picker" id="emotionEmojiPicker">
+              <button class="mood-btn active" data-mood="😊 뿌듯함" type="button">
+                <span class="mood-emoji">😊</span>
+                <span class="mood-text">뿌듯함</span>
+              </button>
+              <button class="mood-btn" data-mood="🌿 평온함" type="button">
+                <span class="mood-emoji">🌿</span>
+                <span class="mood-text">평온함</span>
+              </button>
+              <button class="mood-btn" data-mood="💡 영감가득" type="button">
+                <span class="mood-emoji">💡</span>
+                <span class="mood-text">영감가득</span>
+              </button>
+              <button class="mood-btn" data-mood="🥱 조금피곤" type="button">
+                <span class="mood-emoji">🥱</span>
+                <span class="mood-text">조금피곤</span>
+              </button>
+              <button class="mood-btn" data-mood="🫧 잡념비움" type="button">
+                <span class="mood-emoji">🫧</span>
+                <span class="mood-text">잡념비움</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. 이번 세션 몰입 만족도 (토마토 5단계 스탬프) -->
+          <div class="healing-section">
+            <div class="healing-section-header">
+              <span class="healing-section-title">🍅 이번 세션 몰입 만족도</span>
+              <span class="pomo-score-badge" id="pomoScoreText">5점 • 완벽한 몰입! 🍅</span>
+            </div>
+            <div class="pomo-stamp-row" id="pomoStampContainer">
+              <button class="pomo-stamp-btn" data-level="1" type="button">
+                <span class="stamp-tomato">🍅</span>
+                <span class="stamp-num">1</span>
+              </button>
+              <button class="pomo-stamp-btn" data-level="2" type="button">
+                <span class="stamp-tomato">🍅</span>
+                <span class="stamp-num">2</span>
+              </button>
+              <button class="pomo-stamp-btn" data-level="3" type="button">
+                <span class="stamp-tomato">🍅</span>
+                <span class="stamp-num">3</span>
+              </button>
+              <button class="pomo-stamp-btn" data-level="4" type="button">
+                <span class="stamp-tomato">🍅</span>
+                <span class="stamp-num">4</span>
+              </button>
+              <button class="pomo-stamp-btn active" data-level="5" type="button">
+                <span class="stamp-tomato">🍅</span>
+                <span class="stamp-num">5</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. 한 줄 힐링 메모 -->
+          <div class="healing-section">
+            <div class="healing-section-header">
+              <span class="healing-section-title">✍️ 한 줄 힐링 메모</span>
+              <span class="char-count-badge" id="charCount">0 / 100자</span>
+            </div>
+            <textarea id="diaryInput" class="diary-textarea" maxlength="100" placeholder="25분 집중 후 어떤 기분이 드셨나요? 포근한 한 줄을 남겨보세요..."></textarea>
+          </div>
+
+          <!-- 4. 액션 버튼 -->
+          <button class="btn-primary diary-full-btn healing-save-btn" id="diarySaveBtn" type="button">일기장에 소중히 보관하기 🌸</button>
+          <div class="diary-saved-msg hidden" id="diarySavedMsg">✅ 따뜻한 마음 일기가 안전하게 저장되었어요! 🌸</div>
+          <button class="diary-dismiss-btn" id="dismissDiaryBtn" type="button">다음에 쓸게요 (닫기)</button>
+        </div>
+      </div>
+
+      <div id="diaryChatView" class="hidden">
+        <div class="notebook-card">
+          <div class="notebook-header">📔 나의 일기장에게 물어보기</div>
+          <div class="notebook-chat-log" id="diaryChatLog">
+            <div class="chat-bubble chat-bubble-ai">안녕하세요! 지금까지 쓴 기록에 대해 무엇이든 물어보세요 😊</div>
+          </div>
+          <div class="notebook-input-row">
+            <input type="text" id="diaryQuestionInput" class="diary-question-input" placeholder="예: 요즘 내 기분이 어땠어?">
+            <button class="diary-send-btn" id="diaryAskBtn">➤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 미션 팝업 -->
+  <div class="overlay hidden" id="missionOverlay">
+    <div class="mission-card">
+      <div class="mission-character" id="missionCharEmoji">🐰</div>
+      <div class="mission-character-name" id="missionCharName">토끼모찌</div>
+      <div class="mission-content" id="missionContent">미션을 불러오는 중...</div>
+      <div class="mission-divider"></div>
+      <div class="quote-text" id="quoteText"></div>
+      <div class="song-reco" id="songReco"></div>
+      <button class="btn-primary" id="missionDoneBtn">미션 완료!</button>
+      <button class="mission-skip" id="missionSkipBtn">다음에 할게요</button>
+    </div>
+  </div>
+
+  <!-- 완료 도장 팝업 -->
+  <div class="overlay hidden" id="stampOverlay">
+    <div class="stamp-card">
+      <div class="stamp-icon">💮</div>
+      <div class="stamp-title">참 잘했어요!</div>
+      <div class="stamp-message" id="stampMessage"></div>
+
+      <!-- 미션 완료 보상: 저작권이 끝난 힐링 클래식을 화면 안에서 바로 재생 -->
+      <div class="classic-card" id="classicCard">
+        <div class="classic-label">🎵 오늘의 힐링 클래식</div>
+        <div class="classic-title" id="classicTitle">곡을 고르는 중이에요...</div>
+        <div class="classic-player"><div id="classicPlayer"></div></div>
+      </div>
+
+      <button class="btn-primary stamp-next-btn" id="stampNextBtn" type="button">다음 집중 시작하기 🍅</button>
+    </div>
+  </div>
+
+  <?!= include('ClientScript'); ?>
+</body>
+</html>

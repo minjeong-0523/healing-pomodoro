@@ -1,0 +1,5 @@
+# 비밀키가 들어 있는 파일은 절대 올리지 않기
+.mcp.json
+.clasp.json
+.clasprc.json
+mcp_config.json

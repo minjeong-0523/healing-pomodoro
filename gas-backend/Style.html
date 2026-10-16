@@ -1,0 +1,1565 @@
+<style>
+  :root {
+    --pink: #ffd9e8;
+    --pink-dark: #ff9ec7;
+    --blue: #d7ecff;
+    --blue-dark: #a7d4ff;
+    --yellow: #fff3c4;
+    --yellow-dark: #ffe186;
+    --text: #6b5a63;
+    --card-shadow: 0 10px 25px rgba(180, 150, 170, 0.25);
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    overflow-x: hidden;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: linear-gradient(160deg, var(--blue) 0%, var(--pink) 50%, var(--yellow) 100%);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 32px 16px 60px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+  }
+
+  @media (max-width: 360px) {
+    body {
+      padding: 20px 12px 40px;
+    }
+
+    .timer {
+      font-size: 44px;
+    }
+
+    .main-card, .mission-card, .stamp-card, .nav-card {
+      padding-left: 18px;
+      padding-right: 18px;
+    }
+  }
+
+  h1 {
+    font-size: 22px;
+    margin: 8px 0 4px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: #8a7a82;
+    margin-bottom: 18px;
+  }
+
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .count-badge,
+  .streak-badge {
+    display: inline-block;
+    background: #fff;
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 13px;
+    box-shadow: var(--card-shadow);
+  }
+
+  .nav-card {
+    background: #fff;
+    border-radius: 24px;
+    padding: 26px 22px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 16px;
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.12s ease;
+  }
+
+  .nav-card:active {
+    transform: scale(0.97);
+  }
+
+  .nav-emoji {
+    font-size: 36px;
+    margin-bottom: 8px;
+  }
+
+  .nav-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+
+  .nav-desc {
+    font-size: 12px;
+    color: #a98fa0;
+  }
+
+  .back-link {
+    display: block;
+    background: none;
+    border: none;
+    color: #8a7a82;
+    font-size: 13px;
+    font-weight: normal;
+    text-align: left;
+    margin-bottom: 10px;
+    padding: 10px 2px;
+    min-height: auto;
+    cursor: pointer;
+  }
+
+  .main-card {
+    background: #fff;
+    border-radius: 28px;
+    padding: 32px 24px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 20px;
+  }
+
+  .mode-label {
+    font-size: 15px;
+    font-weight: bold;
+    padding: 6px 14px;
+    border-radius: 16px;
+    display: inline-block;
+    margin-bottom: 18px;
+  }
+
+  .mode-focus {
+    background: var(--blue);
+    color: #3a6a92;
+  }
+
+  .mode-break {
+    background: var(--yellow);
+    color: #917a2a;
+  }
+
+  .focus-emoji {
+    font-size: 46px;
+    line-height: 1;
+    margin-bottom: 14px;
+  }
+
+  .emoji-item {
+    display: inline-block;
+    animation: bounce 1.6s ease-in-out infinite;
+  }
+
+  .emoji-item:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .emoji-item:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-12px) rotate(-10deg); }
+  }
+
+  .bgm-toggle {
+    display: block;
+    margin: 12px auto 0;
+    background: none;
+    color: #a98fa0;
+    font-weight: normal;
+    font-size: 12px;
+    padding: 8px;
+    min-height: auto;
+  }
+
+  .stats-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .stats-item {
+    flex: 1;
+  }
+
+  .stats-number {
+    font-size: 28px;
+    font-weight: bold;
+    color: #5c4d55;
+  }
+
+  .stats-caption {
+    font-size: 12px;
+    color: #a98fa0;
+    margin-top: 2px;
+  }
+
+  .stats-streak {
+    font-size: 14px;
+    font-weight: bold;
+    color: #d97ba0;
+    margin-bottom: 4px;
+  }
+
+  .stats-sub-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #8a7a82;
+    text-align: left;
+    margin-bottom: 10px;
+  }
+
+  .day-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: #8a7a82;
+    margin-bottom: 6px;
+  }
+
+  .day-bar-label {
+    width: 48px;
+    text-align: left;
+    flex-shrink: 0;
+  }
+
+  .day-bar-track {
+    flex: 1;
+    background: #f3eef0;
+    border-radius: 8px;
+    height: 14px;
+    overflow: hidden;
+  }
+
+  .day-bar-fill {
+    height: 100%;
+    background: var(--pink-dark);
+    border-radius: 8px;
+  }
+
+  .day-bar-count {
+    width: 20px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .diary-label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #5c4d55;
+    text-align: left;
+    margin-bottom: 10px;
+  }
+
+  .diary-textarea {
+    width: 100%;
+    min-height: 90px;
+    border: 1px solid #f1e6ea;
+    border-radius: 14px;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    color: #5c4d55;
+    resize: vertical;
+  }
+
+  .diary-question-input {
+    width: 100%;
+    border: 1px solid #f1e6ea;
+    border-radius: 14px;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    color: #5c4d55;
+  }
+
+  .diary-full-btn {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .diary-saved-msg {
+    font-size: 13px;
+    color: #6fae7f;
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  /* ================= Stitch 힐링 다이어리 테마 스타일 ================= */
+  .healing-diary-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 16px 36px rgba(251, 207, 232, 0.45), 0 4px 12px rgba(253, 230, 138, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-left: none;
+    margin-bottom: 12px;
+  }
+
+  .healing-diary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+
+  .healing-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .healing-badge {
+    display: inline-block;
+    align-self: flex-start;
+    background: #fde68a;
+    color: #78350f;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+    letter-spacing: -0.2px;
+  }
+
+  .healing-diary-header .notebook-header {
+    font-size: 16px;
+    font-weight: 800;
+    color: #4a3b44;
+    margin: 2px 0 0;
+  }
+
+  .diary-close-x {
+    width: 28px;
+    height: 28px;
+    min-height: auto;
+    border-radius: 50%;
+    background: #f3ecf0;
+    color: #8a7a82;
+    border: none;
+    font-size: 13px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .diary-close-x:hover {
+    background: #e8dbe2;
+    color: #4a3b44;
+  }
+
+  .healing-section {
+    background: #fdfaf6;
+    border-radius: 18px;
+    padding: 12px 14px;
+    border: 1px solid #f6ece0;
+    margin-bottom: 14px;
+  }
+
+  .healing-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .healing-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #5c4d55;
+  }
+
+  .mood-weather-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #b45309;
+    background: #fef3c7;
+    padding: 3px 9px;
+    border-radius: 12px;
+  }
+
+  .pomo-score-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #b91c1c;
+    background: #fee2e2;
+    padding: 3px 9px;
+    border-radius: 12px;
+  }
+
+  .char-count-badge {
+    font-size: 11px;
+    color: #9c8e95;
+    font-weight: 600;
+  }
+
+  /* 감정 이모지 선택 버튼 (5열) */
+  .emotion-picker {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+
+  .mood-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 4px;
+    background: #ffffff;
+    border: 1px solid #fae8ee;
+    border-radius: 16px;
+    min-height: auto;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .mood-btn .mood-emoji {
+    font-size: 22px;
+    line-height: 1.1;
+    margin-bottom: 4px;
+  }
+
+  .mood-btn .mood-text {
+    font-size: 10px;
+    font-weight: 600;
+    color: #8a7a82;
+  }
+
+  .mood-btn:hover {
+    transform: translateY(-2px);
+    background: #fffdf7;
+  }
+
+  .mood-btn.active {
+    background: #fef08a;
+    border: 1.5px solid #eab308;
+    box-shadow: 0 4px 12px rgba(234, 179, 8, 0.35);
+    transform: scale(1.04);
+  }
+
+  .mood-btn.active .mood-text {
+    color: #713f12;
+    font-weight: 800;
+  }
+
+  /* 토마토 몰입도 스탬프 버튼 */
+  .pomo-stamp-row {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 6px 2px;
+  }
+
+  .pomo-stamp-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: transparent;
+    border: none;
+    padding: 4px;
+    min-height: auto;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .pomo-stamp-btn .stamp-tomato {
+    font-size: 26px;
+    filter: grayscale(80%);
+    opacity: 0.4;
+    transition: all 0.18s ease;
+  }
+
+  .pomo-stamp-btn .stamp-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: #b7a6ae;
+    margin-top: 2px;
+  }
+
+  .pomo-stamp-btn:hover {
+    transform: scale(1.15);
+  }
+
+  .pomo-stamp-btn.active .stamp-tomato {
+    filter: none;
+    opacity: 1;
+    transform: scale(1.08);
+  }
+
+  .pomo-stamp-btn.active .stamp-num {
+    color: #b91c1c;
+  }
+
+  /* 일기 메모 textarea */
+  .healing-section .diary-textarea {
+    width: 100%;
+    min-height: 80px;
+    border: 1px solid #f2e3ea;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #4a3b44;
+    box-sizing: border-box;
+    outline: none;
+  }
+
+  .healing-section .diary-textarea:focus {
+    border-color: #f472b6;
+    box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.15);
+  }
+
+  /* 일기 저장 버튼 (그라데이션 & 섀도우) */
+  .healing-save-btn {
+    background: linear-gradient(135deg, #fbcfe8 0%, #fde68a 100%);
+    color: #5c3848 !important;
+    font-size: 14px;
+    font-weight: 800;
+    padding: 13px;
+    border-radius: 18px;
+    box-shadow: 0 6px 18px rgba(251, 207, 232, 0.65);
+    border: none;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .healing-save-btn:hover {
+    box-shadow: 0 8px 22px rgba(251, 207, 232, 0.85);
+  }
+
+  .diary-dismiss-btn {
+    width: 100%;
+    background: transparent;
+    color: #a3929b;
+    border: none;
+    font-size: 12px;
+    font-weight: normal;
+    text-decoration: underline;
+    margin-top: 8px;
+    padding: 8px;
+    min-height: auto;
+    cursor: pointer;
+  }
+
+  .diary-dismiss-btn:hover {
+    color: #6b5a63;
+  }
+
+  .notebook-card {
+    background: #fffaf0;
+    border-radius: 18px 18px 8px 8px;
+    padding: 20px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 20px;
+    text-align: left;
+    border-left: 6px solid var(--yellow-dark);
+  }
+
+  .notebook-header {
+    font-size: 14px;
+    font-weight: bold;
+    color: #5c4d55;
+    margin-bottom: 12px;
+  }
+
+  .notebook-chat-log {
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 6px 4px;
+    margin-bottom: 12px;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 27px,
+      #f0e4d0 28px
+    );
+  }
+
+  .chat-bubble {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+
+  .chat-bubble-user {
+    background: var(--pink-dark);
+    color: #fff;
+    margin-left: auto;
+    border-bottom-right-radius: 4px;
+  }
+
+  .chat-bubble-ai {
+    background: #fff;
+    color: #5c4d55;
+    margin-right: auto;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 2px 6px rgba(180, 150, 170, 0.15);
+  }
+
+  .notebook-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f7f1e8;
+    border-radius: 24px;
+    padding: 6px 6px 6px 16px;
+  }
+
+  .notebook-input-row .diary-question-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 8px 4px;
+  }
+
+  .notebook-input-row .diary-question-input:focus {
+    outline: none;
+  }
+
+  .diary-send-btn {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    min-height: auto;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--pink-dark);
+    color: #fff;
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .diary-sources-label {
+    font-size: 11px;
+    font-weight: bold;
+    color: #a98fa0;
+    margin: 8px 0 4px;
+  }
+
+  .diary-source-item {
+    font-size: 12px;
+    color: #8a7a82;
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+
+  .diary-source-item strong {
+    color: #5c4d55;
+  }
+
+  .focus-caption {
+    font-size: 14px;
+    margin-bottom: 18px;
+    color: #8a7a82;
+  }
+
+  .timer {
+    font-size: 54px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin-bottom: 22px;
+    color: #5c4d55;
+  }
+
+  .button-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    border: none;
+    border-radius: 18px;
+    padding: 14px 20px;
+    min-height: 44px;
+    cursor: pointer;
+    transition: transform 0.12s ease;
+  }
+
+  button:active {
+    transform: scale(0.95);
+  }
+
+  .btn-primary {
+    background: var(--pink-dark);
+    color: #fff;
+  }
+
+  .btn-secondary {
+    background: var(--blue-dark);
+    color: #fff;
+  }
+
+  .btn-ghost {
+    background: #f3eef0;
+    color: var(--text);
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(107, 90, 99, 0.35);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    z-index: 10;
+    overflow-y: auto;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  .diary-fab {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--pink-dark);
+    color: #fff;
+    font-size: 24px;
+    border: none;
+    box-shadow: var(--card-shadow);
+    cursor: pointer;
+    z-index: 5;
+  }
+
+  .diary-fab:active {
+    transform: scale(0.94);
+  }
+
+  .diary-popup {
+    width: 100%;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+    text-align: left;
+    background: #fdf9f2;
+    border-radius: 24px;
+    padding: 14px 20px 24px;
+    margin: 0 auto;
+  }
+
+  .diary-handle {
+    width: 40px;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(107, 90, 99, 0.2);
+    margin: 0 auto 14px;
+  }
+
+  .diary-tab-row {
+    display: flex;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    padding: 4px;
+    margin-bottom: 16px;
+  }
+
+  .diary-tab {
+    flex: 1;
+    background: transparent;
+    color: #8a7a82;
+    font-size: 13px;
+    min-height: 38px;
+    padding: 8px 10px;
+    border-radius: 12px;
+  }
+
+  .diary-tab.active {
+    background: #fff;
+    color: #5c4d55;
+    box-shadow: var(--card-shadow);
+  }
+
+  .mission-card {
+    background: #fff;
+    border-radius: 26px;
+    padding: 30px 26px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    box-shadow: var(--card-shadow);
+    animation: pop-in 0.25s ease;
+  }
+
+  @keyframes pop-in {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .mission-character {
+    font-size: 38px;
+    margin-bottom: 6px;
+  }
+
+  .mission-character-name {
+    font-size: 13px;
+    color: #a98fa0;
+    margin-bottom: 14px;
+  }
+
+  .mission-content {
+    font-size: 17px;
+    font-weight: bold;
+    margin-bottom: 22px;
+    line-height: 1.5;
+  }
+
+  .mission-divider {
+    height: 1px;
+    background: #f1e6ea;
+    margin: 18px 0;
+  }
+
+  .quote-text {
+    font-size: 13px;
+    font-style: italic;
+    color: #8a7a82;
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+
+  .song-reco {
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+
+  .song-reco a {
+    color: #d97ba0;
+    font-weight: bold;
+    text-decoration: none;
+  }
+
+  .song-reco a:hover {
+    text-decoration: underline;
+  }
+
+  .mission-skip {
+    display: block;
+    margin: 14px auto 0;
+    background: none;
+    color: #b7a6ae;
+    font-weight: normal;
+    font-size: 12px;
+    text-decoration: underline;
+    padding: 10px;
+    min-height: auto;
+  }
+
+  .stamp-card {
+    background: #fff;
+    border-radius: 26px;
+    padding: 36px 26px;
+    max-width: 320px;
+    width: 100%;
+    text-align: center;
+    box-shadow: var(--card-shadow);
+  }
+
+  .stamp-icon {
+    font-size: 64px;
+    animation: stamp-pop 0.5s cubic-bezier(.36,1.6,.5,1);
+  }
+
+  @keyframes stamp-pop {
+    0% { transform: scale(2.4) rotate(-15deg); opacity: 0; }
+    60% { transform: scale(0.9) rotate(4deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  .stamp-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 10px 0 10px;
+    color: #d97ba0;
+  }
+
+  .stamp-message {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .yt-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    left: -9999px;
+    top: -9999px;
+  }
+
+  /* ================= Stitch 디자인 (Claude 버전) =================
+     Stitch 프로젝트 "스몰 힐링 뽀모도로 (Claude 버전)"의 홈/타이머 화면을 옮겨온 스타일.
+     크림 배경 + 하얀 쿠션 카드 + 파스텔 원형 아이콘 */
+  :root {
+    --cream: #faf7f2;
+    --card-border: #f3efea;
+    --ink: #2c2725;
+    --ink-soft: #7f7471;
+    --ink-faint: #b5a9a7;
+    --stitch-pink: #ffb5c2;
+    --stitch-pink-soft: #ffe6eb;
+    --stitch-yellow-soft: #fff4ce;
+    --stitch-blue-soft: #dff1fd;
+    --pink-dark: #ff8ca3;
+    --text: #4a4e5a;
+    --card-shadow: 0 10px 25px -4px rgba(140, 115, 110, 0.10), 0 4px 10px -2px rgba(140, 115, 110, 0.05);
+  }
+
+  body {
+    font-family: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    padding: 28px 20px 96px;
+  }
+
+  .app-title-group {
+    text-align: left;
+    margin-bottom: 18px;
+  }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #302d2b;
+    margin: 4px 0 6px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin-bottom: 0;
+  }
+
+  .badge-row {
+    justify-content: flex-start;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .count-badge,
+  .streak-badge {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 15px;
+    border-radius: 999px;
+    box-shadow: 0 1px 3px rgba(140, 115, 110, 0.08);
+  }
+
+  .count-badge {
+    background: #ffe8ec;
+    border: 1px solid #ffd9e0;
+    color: #7b434f;
+  }
+
+  .streak-badge {
+    background: var(--stitch-yellow-soft);
+    border: 1px solid #ffe79e;
+    color: #6e5918;
+  }
+
+  /* 홈 메뉴 카드: 왼쪽 동그란 이모지 + 글자 + 오른쪽 화살표 */
+  .nav-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-align: left;
+    border-radius: 26px;
+    padding: 20px;
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow), inset 0 1px 1px rgba(255, 255, 255, 0.85);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+
+  .nav-card:active {
+    transform: scale(0.98);
+  }
+
+  .nav-emoji {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin: 0;
+  }
+
+  .nav-pink .nav-emoji { background: var(--stitch-pink-soft); }
+  .nav-yellow .nav-emoji { background: var(--stitch-yellow-soft); }
+  .nav-blue .nav-emoji { background: var(--stitch-blue-soft); }
+  .nav-pink:hover { border-color: #ffd6de; }
+  .nav-yellow:hover { border-color: #ffeaa7; }
+  .nav-blue:hover { border-color: #bae6fd; }
+
+  .nav-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .nav-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+
+  .nav-desc {
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  .nav-chevron {
+    font-size: 26px;
+    line-height: 1;
+    color: var(--ink-faint);
+    padding: 0 4px;
+  }
+
+  .home-footer {
+    margin-top: 22px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #9f9390;
+  }
+
+  .back-link {
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+
+  /* 큰 카드(타이머/기록) */
+  .main-card {
+    border-radius: 28px;
+    border: 1px solid #fff;
+    box-shadow: var(--card-shadow);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mode-label {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 999px;
+  }
+
+  .mode-focus {
+    background: #bee9ff;
+    color: #2d596c;
+  }
+
+  .mode-break {
+    background: #fff1b8;
+    color: #6e5918;
+  }
+
+  .focus-emoji {
+    font-size: 30px;
+    margin-bottom: 6px;
+  }
+
+  .emoji-item {
+    margin: 0 4px;
+  }
+
+  .focus-caption {
+    font-size: 14px;
+    color: #514345;
+    margin-bottom: 8px;
+  }
+
+  /* 동그란 진행 링 안에 들어가는 타이머 */
+  .timer-ring {
+    position: relative;
+    width: 240px;
+    height: 240px;
+    max-width: 100%;
+    margin: 8px auto 22px;
+  }
+
+  .timer-ring svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .timer-ring-fill {
+    transition: stroke-dashoffset 0.35s ease, stroke 0.3s ease;
+  }
+
+  .timer-ring-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .timer-ring-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #847375;
+    margin-bottom: 2px;
+  }
+
+  .timer {
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #171b26;
+    margin: 0;
+  }
+
+  @media (max-width: 360px) {
+    .timer-ring { width: 210px; height: 210px; }
+    .timer { font-size: 40px; }
+  }
+
+  /* 버튼: 알약 모양 */
+  button {
+    border-radius: 999px;
+  }
+
+  .btn-primary {
+    background: var(--stitch-pink);
+    color: #7b434f;
+    box-shadow: 0 8px 20px rgba(255, 181, 194, 0.45);
+  }
+
+  .button-row .btn-primary {
+    flex: 1;
+    max-width: 180px;
+    font-size: 17px;
+  }
+
+  .btn-ghost {
+    background: #f1f3ff;
+    color: #514345;
+    border: 1px solid rgba(214, 194, 196, 0.4);
+    font-size: 17px;
+  }
+
+  .bgm-toggle {
+    margin-top: 18px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: #f1f3ff;
+    color: #514345;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  /* 기록 화면 */
+  .stats-number { color: var(--ink); }
+  .stats-streak { color: #874d59; }
+  .day-bar-track { background: #f3eef2; }
+  .day-bar-fill { background: var(--stitch-pink); }
+
+  /* 일기장 동그라미 버튼 */
+  .diary-fab {
+    background: var(--stitch-pink);
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 10px 24px -2px rgba(255, 140, 163, 0.45);
+  }
+
+  /* 팝업들 */
+  .overlay {
+    background: rgba(48, 45, 43, 0.3);
+  }
+
+  .mission-card,
+  .stamp-card {
+    border-radius: 28px;
+    border: 1px solid var(--card-border);
+  }
+
+  .stamp-title,
+  .song-reco a {
+    color: #874d59;
+  }
+
+  .diary-popup {
+    background: var(--cream);
+    border-radius: 28px;
+  }
+
+  .chat-bubble-user {
+    background: var(--stitch-pink);
+    color: #4a2a33;
+  }
+
+  .diary-send-btn {
+    background: var(--stitch-pink);
+    color: #4a2a33;
+  }
+
+  /* ================= 로그인 / 회원가입 (Stitch 로그인 화면) ================= */
+  .auth-view {
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+  }
+
+  .auth-hero {
+    margin: 24px 0 26px;
+  }
+
+  .auth-logo {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    background: #ffd9de;
+    box-shadow: 0 0 0 14px rgba(255, 217, 222, 0.35), 0 12px 30px rgba(255, 181, 194, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+  }
+
+  .auth-logo-spark {
+    position: absolute;
+    right: -6px;
+    bottom: -2px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #f6e29f;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .auth-title {
+    font-size: 26px;
+    margin: 0 0 6px;
+  }
+
+  .auth-subtitle {
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+
+  .auth-card {
+    background: #fff;
+    border-radius: 28px;
+    padding: 24px 22px 26px;
+    border: 1px solid #fff;
+    box-shadow: var(--card-shadow);
+    text-align: left;
+  }
+
+  .auth-tab-row {
+    display: flex;
+    background: #f1f3ff;
+    border-radius: 999px;
+    padding: 4px;
+    margin-bottom: 20px;
+  }
+
+  .auth-tab {
+    flex: 1;
+    background: transparent;
+    color: #514345;
+    font-size: 14px;
+    font-weight: 700;
+    min-height: 40px;
+    padding: 8px 10px;
+  }
+
+  .auth-tab.active {
+    background: var(--stitch-pink);
+    color: #7b434f;
+    box-shadow: 0 4px 12px rgba(255, 181, 194, 0.45);
+  }
+
+  .auth-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 14px 0 8px;
+  }
+
+  .auth-input {
+    width: 100%;
+    border: 1.5px solid transparent;
+    background: #f1f3ff;
+    border-radius: 16px;
+    padding: 14px 16px;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .auth-input::placeholder {
+    color: #c9b6bb;
+  }
+
+  .auth-input:focus {
+    border-color: var(--stitch-pink);
+    background: #fff;
+  }
+
+  .auth-error {
+    margin-top: 14px;
+    background: #fff0f2;
+    color: #a3364d;
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .auth-submit {
+    width: 100%;
+    margin-top: 22px;
+    font-size: 16px;
+    padding: 16px 20px;
+  }
+
+  .auth-submit:disabled {
+    opacity: 0.7;
+  }
+
+  .auth-hint {
+    margin-top: 20px;
+    font-size: 13px;
+    color: #514345;
+  }
+
+  .auth-footer {
+    margin-top: 28px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #d6c2c4;
+  }
+
+  /* 찾기 질문 선택 상자: 입력칸과 같은 모양 + 오른쪽 작은 화살표 */
+  select.auth-input {
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23847375' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    padding-right: 40px;
+  }
+
+  .auth-section-note {
+    margin-top: 20px;
+    padding: 10px 14px;
+    background: var(--stitch-yellow-soft);
+    color: #6e5918;
+    border-radius: 14px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .find-link {
+    display: block;
+    width: 100%;
+    margin-top: 14px;
+    background: none;
+    color: #874d59;
+    font-size: 13px;
+    font-weight: 600;
+    min-height: auto;
+    padding: 8px;
+  }
+
+  .find-back {
+    display: inline-block;
+    background: #f1f3ff;
+    color: #514345;
+    font-size: 14px;
+    font-weight: 600;
+    min-height: auto;
+    padding: 9px 16px;
+    margin-top: 4px;
+    float: left;
+  }
+
+  .find-logo {
+    background: #f6e29f;
+    box-shadow: 0 0 0 14px rgba(246, 226, 159, 0.3), 0 12px 30px rgba(246, 226, 159, 0.4);
+  }
+
+  #findView .auth-hero {
+    clear: both;
+    padding-top: 18px;
+  }
+
+  .find-result {
+    margin-top: 14px;
+    background: #ffe8ec;
+    color: #7b434f;
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  /* 찾기 질문 등록 팝업 */
+  .recovery-card {
+    text-align: center;
+  }
+
+  .recovery-logo {
+    width: 64px;
+    height: 64px;
+    font-size: 30px;
+    margin-bottom: 16px;
+  }
+
+  .recovery-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .recovery-desc {
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+
+  .recovery-card .auth-input {
+    text-align: left;
+    margin-bottom: 10px;
+  }
+
+  .recovery-card .auth-submit {
+    margin-top: 8px;
+  }
+
+  /* 상단 인사 + 로그아웃 */
+  .user-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .user-greeting {
+    font-size: 13px;
+    font-weight: 600;
+    color: #874d59;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    padding: 6px 14px;
+  }
+
+  .logout-link {
+    background: none;
+    color: var(--ink-faint);
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: underline;
+    padding: 6px 2px;
+    min-height: auto;
+  }
+
+  /* ================= 미션 완료: 힐링 클래식 플레이어 ================= */
+  .stamp-card {
+    max-width: 360px;
+  }
+
+  .classic-card {
+    margin-top: 20px;
+    background: var(--cream);
+    border: 1px solid var(--card-border);
+    border-radius: 22px;
+    padding: 14px 14px 16px;
+  }
+
+  .classic-label {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6e5918;
+    background: var(--stitch-yellow-soft);
+    border-radius: 999px;
+    padding: 3px 10px;
+    margin-bottom: 8px;
+  }
+
+  .classic-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+
+  .classic-player {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 */
+    border-radius: 16px;
+    overflow: hidden;
+    background: #f3eef2;
+  }
+
+  .classic-player iframe,
+  .classic-player > div {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .stamp-next-btn {
+    width: 100%;
+    margin-top: 18px;
+    font-size: 15px;
+  }
+</style>
