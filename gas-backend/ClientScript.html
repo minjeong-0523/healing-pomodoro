@@ -128,7 +128,12 @@
     recoveryAnswer: document.getElementById('recoveryAnswer'),
     recoveryError: document.getElementById('recoveryError'),
     recoverySaveBtn: document.getElementById('recoverySaveBtn'),
-    recoverySkipBtn: document.getElementById('recoverySkipBtn')
+    recoverySkipBtn: document.getElementById('recoverySkipBtn'),
+    authConsent: document.getElementById('authConsent'),
+    consentOverlay: document.getElementById('consentOverlay'),
+    consentError: document.getElementById('consentError'),
+    consentAgreeBtn: document.getElementById('consentAgreeBtn'),
+    consentDeclineBtn: document.getElementById('consentDeclineBtn')
   };
 
   var ytPlayer = null;
@@ -755,6 +760,13 @@
     showHome();
     refreshStats();
 
+    // 동의 전에 가입한 계정이면 동의부터 받아요 (동의해야 앱을 쓸 수 있어요)
+    if (!user.hasConsent) {
+      els.consentError.classList.add('hidden');
+      els.consentOverlay.classList.remove('hidden');
+      return;
+    }
+
     // 찾기 질문이 없는 예전 계정이면 한 번 등록을 권해요
     if (!user.hasRecovery) {
       els.recoveryAnswer.value = '';
@@ -770,7 +782,7 @@
     authToken = null;
     currentUser = null;
     clearToken();
-    [els.missionOverlay, els.stampOverlay, els.diaryOverlay, els.recoveryOverlay].forEach(function (o) { o.classList.add('hidden'); });
+    [els.missionOverlay, els.stampOverlay, els.diaryOverlay, els.recoveryOverlay, els.consentOverlay].forEach(function (o) { o.classList.add('hidden'); });
     els.todayCount.textContent = '0';
     els.streakBadge.textContent = '🔥 0일 연속';
     setAuthMode('login');
@@ -799,6 +811,10 @@
       showAuthError('찾기 질문의 답변을 입력해 주세요.');
       return;
     }
+    if (authMode === 'signup' && !els.authConsent.checked) {
+      showAuthError('기록 열람 안내를 읽고 동의에 체크해 주세요.');
+      return;
+    }
 
     var originalLabel = els.authSubmitBtn.textContent;
     els.authSubmitBtn.disabled = true;
@@ -819,7 +835,7 @@
 
     if (authMode === 'signup') {
       google.script.run.withSuccessHandler(done).withFailureHandler(fail)
-        .signUp(username, password, els.authNickname.value.trim(), els.authQuestion.value, els.authAnswer.value);
+        .signUp(username, password, els.authNickname.value.trim(), els.authQuestion.value, els.authAnswer.value, els.authConsent.checked);
     } else {
       google.script.run.withSuccessHandler(done).withFailureHandler(fail)
         .logIn(username, password);
@@ -937,6 +953,30 @@
       google.script.run.withSuccessHandler(done).withFailureHandler(fail)
         .findUsername(els.findNickname.value.trim(), question, answer);
     }
+  });
+
+  // 예전 계정용: 기록 열람 동의 (동의 안 하면 로그아웃)
+  els.consentDeclineBtn.addEventListener('click', logout);
+
+  els.consentAgreeBtn.addEventListener('click', function () {
+    els.consentAgreeBtn.disabled = true;
+    google.script.run
+      .withSuccessHandler(function (res) {
+        els.consentAgreeBtn.disabled = false;
+        if (res && res.ok) {
+          currentUser.hasConsent = true;
+          els.consentOverlay.classList.add('hidden');
+          enterApp(currentUser);
+        } else {
+          els.consentError.textContent = '잠시 후 다시 시도해 주세요.';
+          els.consentError.classList.remove('hidden');
+        }
+      })
+      .withFailureHandler(function (err) {
+        els.consentAgreeBtn.disabled = false;
+        handleServerError(err);
+      })
+      .agreePrivacy(authToken);
   });
 
   // 예전 계정용: 로그인 후 찾기 질문 등록

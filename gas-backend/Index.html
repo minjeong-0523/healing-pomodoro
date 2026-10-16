@@ -43,6 +43,11 @@
           <select class="auth-input recovery-select" id="authQuestion"></select>
           <label class="auth-label" for="authAnswer">답변</label>
           <input class="auth-input" id="authAnswer" type="text" placeholder="나만 아는 답변 입력">
+
+          <div class="consent-box">
+            <div class="consent-text">📋 이 앱에 쓴 일기·감정·집중 기록은 구글 시트에 저장되며, <b>앱 관리자(민정)가 볼 수 있어요.</b> 비밀번호와 찾기 답변은 암호로 바뀌어 저장되어 관리자도 볼 수 없어요.</div>
+            <label class="consent-check"><input type="checkbox" id="authConsent"> 위 내용을 확인했고 동의해요 (필수)</label>
+          </div>
         </div>
 
         <div class="auth-error hidden" id="authError"></div>
@@ -108,6 +113,18 @@
 
     <div class="auth-hint">찾기 질문을 정하지 않았다면 관리자에게 문의해 주세요</div>
     <div class="auth-footer">☕ 따뜻하고 평온한 하루를 응원해요</div>
+  </div>
+
+  <!-- 동의 기능이 생기기 전에 가입한 계정에게 한 번 받는 동의 팝업 (동의해야 앱 사용 가능) -->
+  <div class="overlay hidden" id="consentOverlay">
+    <div class="mission-card recovery-card">
+      <div class="auth-logo find-logo recovery-logo">📋</div>
+      <div class="recovery-title">기록 열람 안내</div>
+      <div class="consent-text">이 앱에 쓴 일기·감정·집중 기록은 구글 시트에 저장되며, <b>앱 관리자(민정)가 볼 수 있어요.</b> 비밀번호와 찾기 답변은 암호로 바뀌어 저장되어 관리자도 볼 수 없어요.</div>
+      <div class="auth-error hidden" id="consentError"></div>
+      <button class="btn-primary auth-submit" id="consentAgreeBtn" type="button">동의하고 시작하기 🌷</button>
+      <button class="mission-skip" id="consentDeclineBtn" type="button">동의하지 않아요 (로그아웃)</button>
+    </div>
   </div>
 
   <!-- 찾기 질문이 없는 예전 계정에게 한 번 물어보는 팝업 -->

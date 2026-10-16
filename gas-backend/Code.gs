@@ -14,7 +14,7 @@ var LOGS_HEADERS = ['timestamp', 'session_type', 'mission_id', 'completed', 'not
 var QUOTES_HEADERS = ['id', 'quote', 'song_title', 'song_artist', 'is_active'];
 var DIARY_HEADERS = ['log_id', 'date', 'category', 'tags', 'content', 'sentiment', 'energy_level', 'notes', 'user_id'];
 var USERS_HEADERS = ['user_id', 'username', 'nickname', 'password_hash', 'salt', 'token', 'created_at',
-  'recovery_question', 'recovery_answer_hash', 'last_login'];
+  'recovery_question', 'recovery_answer_hash', 'last_login', 'privacy_agreed_at'];
 
 // 회원마다 따로 생기는 탭: "기록_아이디", "일기_아이디"
 var USER_LOGS_PREFIX = '기록_';
@@ -112,7 +112,7 @@ function ensureSheets_() {
     styleHeader_(users);
   }
   // 나중에 추가된 칸(찾기 질문 등)이 예전 Users 탭에 없으면 붙여준다
-  ['recovery_question', 'recovery_answer_hash', 'last_login'].forEach(function (h) {
+  ['recovery_question', 'recovery_answer_hash', 'last_login', 'privacy_agreed_at'].forEach(function (h) {
     ensureColumn_(users, h);
   });
 
@@ -217,7 +217,8 @@ function publicUser_(u) {
     username: String(u.username),
     nickname: u.nickname || u.username,
     token: u.token,
-    hasRecovery: !!(u.recovery_question && u.recovery_answer_hash)
+    hasRecovery: !!(u.recovery_question && u.recovery_answer_hash),
+    hasConsent: !!u.privacy_agreed_at
   };
 }
 
@@ -275,7 +276,10 @@ function requireUser_(token) {
 }
 
 /** 회원가입: 아이디/비밀번호/닉네임/찾기 질문을 받아 Users 탭에 저장하고 바로 로그인 상태로 만들어 준다 */
-function signUp(username, password, nickname, question, answer) {
+function signUp(username, password, nickname, question, answer, agreed) {
+  if (agreed !== true) {
+    return { ok: false, message: '기록 열람 안내에 동의해야 가입할 수 있어요.' };
+  }
   username = String(username || '').trim();
   password = String(password || '');
   nickname = String(nickname || '').trim() || username;
@@ -319,7 +323,8 @@ function signUp(username, password, nickname, question, answer) {
       created_at: new Date(),
       recovery_question: question,
       recovery_answer_hash: hashPassword_(answer, salt),
-      last_login: new Date()
+      last_login: new Date(),
+      privacy_agreed_at: new Date()
     };
     appendByHeaders_(sheets.users, user);
 
@@ -434,6 +439,14 @@ function setRecovery(token, question, answer) {
   var u = findUserByName_(user.username);
   setUserCell_(u, 'recovery_question', question);
   setUserCell_(u, 'recovery_answer_hash', hashPassword_(answer, u.salt));
+  CacheService.getScriptCache().remove('tok_' + token);
+  return { ok: true };
+}
+
+/** 동의 전에 가입한 예전 계정이 로그인 후 기록 열람 안내에 동의할 때 사용 (동의한 날짜를 남김) */
+function agreePrivacy(token) {
+  var user = requireUser_(token);
+  setUserCell_(findUserByName_(user.username), 'privacy_agreed_at', new Date());
   CacheService.getScriptCache().remove('tok_' + token);
   return { ok: true };
 }
